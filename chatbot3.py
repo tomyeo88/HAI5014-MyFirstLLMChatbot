@@ -14,31 +14,44 @@ client = ChatCompletionsClient(
 
 print("Chatbot is ready! Type 'bye' to exit.")
 
+# Initialize the conversation history
+conversation_history = [
+    SystemMessage("You are a helpful assistant.")
+]
+
 while True:
     user_input = input("You: ")
     if user_input.lower() == "bye":
         print("Chatbot: Goodbye!")
         break
 
+    # Add the user's message to the conversation history
+    conversation_history.append(UserMessage(user_input))
+
+    # Get the chatbot's response
     response = client.complete(
         stream=True,
-        messages=[
-            SystemMessage("You are a helpful assistant."),
-            UserMessage(user_input),
-        ],
+        messages=conversation_history,
         model_extras={'stream_options': {'include_usage': True}},
         model=model_name,
     )
 
     usage = {}
+    chatbot_reply = ""
     for update in response:
         if update.choices and update.choices[0].delta:
-            print(update.choices[0].delta.content or "", end="")
+            content = update.choices[0].delta.content or ""
+            print(content, end="")
+            chatbot_reply += content
         if update.usage:
             usage = update.usage
 
+    print("\n")  # Print a newline after the chatbot's response
+
+    # Add the chatbot's reply to the conversation history
+    conversation_history.append(SystemMessage(chatbot_reply))
+
     if usage:
-        print("\n")
         for k, v in usage.items():
             print(f"{k} = {v}")
 
