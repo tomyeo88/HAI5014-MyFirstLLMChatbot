@@ -10,6 +10,9 @@ client = OpenAI(
     api_key=token,
 )
 
+# Prompt the user for input
+user_input = input("Enter your question or prompt: ")
+
 response = client.chat.completions.create(
     messages=[
         {
@@ -18,7 +21,7 @@ response = client.chat.completions.create(
         },
         {
             "role": "user",
-            "content": "Give me 5 good reasons why I should exercise every day.",
+            "content": user_input,  # Use the user's input here
         }
     ],
     model=model_name,
@@ -35,5 +38,5 @@ for update in response:
 
 if usage:
     print("\n")
-    for k, v in usage.dict().items():
+    for k, v in vars(usage).items():  # Replaced usage.dict() with vars(usage)
         print(f"{k} = {v}")
