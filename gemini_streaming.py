@@ -10,33 +10,48 @@ client = OpenAI(
     api_key=token,
 )
 
-# Prompt the user for input
-user_input = input("Enter your question or prompt: ")
+# Initialize conversation history
+conversation_history = [
+    {
+        "role": "system",
+        "content": "You are a helpful assistant.",
+    }
+]
 
-response = client.chat.completions.create(
-    messages=[
-        {
-            "role": "system",
-            "content": "You are a helpful assistant.",
-        },
-        {
-            "role": "user",
-            "content": user_input,  # Use the user's input here
-        }
-    ],
-    model=model_name,
-    stream=True,
-    stream_options={'include_usage': True}
-)
+while True:
+    # Prompt the user for input
+    user_input = input("Enter your question or prompt (or type 'exit' to quit): ")
+    if user_input.lower() == "exit":
+        print("Goodbye!")
+        break
 
-usage = None
-for update in response:
-    if update.choices and update.choices[0].delta:
-        print(update.choices[0].delta.content or "", end="")
-    if update.usage:
-        usage = update.usage
+    # Add user input to the conversation history
+    conversation_history.append({
+        "role": "user",
+        "content": user_input,
+    })
 
-if usage:
-    print("\n")
-    for k, v in vars(usage).items():  # Replaced usage.dict() with vars(usage)
-        print(f"{k} = {v}")
+    # Get the response from the model
+    response = client.chat.completions.create(
+        messages=conversation_history,
+        model=model_name,
+        stream=True,
+        stream_options={'include_usage': True}
+    )
+
+    usage = None
+    for update in response:
+        if update.choices and update.choices[0].delta:
+            print(update.choices[0].delta.content or "", end="")
+            # Add the assistant's response to the conversation history
+            conversation_history.append({
+                "role": "assistant",
+                "content": update.choices[0].delta.content or "",
+            })
+        if update.usage:
+            usage = update.usage
+
+    if usage:
+        print("\n")
+        for k, v in vars(usage).items():  # Replaced usage.dict() with vars(usage)
+            print(f"{k} = {v}")
